@@ -1,0 +1,42 @@
+"use client"
+
+import { Card } from "@/components/ui/card"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+
+export default function AdminDashboard() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground mt-2">Welcome to your restaurant management panel</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Menu Management</h3>
+          <p className="text-sm text-muted-foreground">Add, edit, or remove menu items from your restaurant</p>
+          <Link href="/admin/menu" className="block">
+            <Button className="w-full">Manage Menu</Button>
+          </Link>
+        </Card>
+
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Orders</h3>
+          <p className="text-sm text-muted-foreground">View and manage customer orders in real-time</p>
+          <Link href="/admin/orders" className="block">
+            <Button className="w-full">View Orders</Button>
+          </Link>
+        </Card>
+
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Categories</h3>
+          <p className="text-sm text-muted-foreground">Organize your menu with categories</p>
+          <Link href="/admin/categories" className="block">
+            <Button className="w-full">Manage Categories</Button>
+          </Link>
+        </Card>
+      </div>
+    </div>
+  )
+}
