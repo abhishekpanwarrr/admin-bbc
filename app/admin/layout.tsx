@@ -1,83 +1,47 @@
-"use client"
+"use client";
 
-import type React from "react"
+import { ReactNode, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import Header from "@/components/admin/header";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { getCurrentUser, removeToken } from "@/lib/auth"
-import { Button } from "@/components/ui/button"
-
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [userName, setUserName] = useState("")
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const user = await getCurrentUser()
-        if (user.role !== "admin") {
-          router.push("/user/menu")
+        const user = await getCurrentUser();
+        if (user.role !== "ADMIN") {
+          router.push("/user/menu");
         }
-        setUserName(user.name || user.email)
+        setUserName(user.role);
       } catch {
-        router.push("/auth/login")
+        router.push("/auth/login");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
-    checkAuth()
-  }, [router])
-
-  const handleLogout = () => {
-    removeToken()
-    router.push("/auth/login")
-  }
+    };
+    checkAuth();
+  }, [router]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-          <div className="flex items-center space-x-8">
-            <Link href="/admin/dashboard" className="text-xl font-bold text-primary">
-              FoodHub Admin
-            </Link>
-            <div className="hidden md:flex space-x-4">
-              <Link href="/admin/dashboard" className="text-sm text-foreground hover:text-primary transition">
-                Dashboard
-              </Link>
-              <Link href="/admin/menu" className="text-sm text-foreground hover:text-primary transition">
-                Menu
-              </Link>
-              <Link href="/admin/orders" className="text-sm text-foreground hover:text-primary transition">
-                Orders
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">Welcome, {userName}</span>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <Header userName={userName} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {children}
+      </main>
     </div>
-  )
+  );
 }
