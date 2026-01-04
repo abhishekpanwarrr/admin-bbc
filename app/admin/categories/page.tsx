@@ -5,20 +5,33 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authenticatedFetch } from "@/lib/auth";
-import { AddMenuItemDialog } from "@/components/admin/add-menu-item-dialog";
 import type { MenuItem } from "@/types/menu";
 import { Spinner } from "@/components/ui/spinner";
-import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Item } from "@/components/ui/item";
+
+async function uploadToCloudinary(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "menu_uploads");
+  formData.append("folder", "menu");
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+    { method: "POST", body: formData }
+  );
+
+  if (!res.ok) throw new Error("Image upload failed");
+  const data = await res.json();
+  return data.secure_url as string;
+}
 
 export default function MenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryImage, setCategoryImage] = useState<File | null>(null);
 
-  useEffect(() => {
-    fetchMenuItems();
-  }, []);
+  const { toast } = useToast();
 
   const fetchMenuItems = async () => {
     try {
@@ -62,14 +75,43 @@ export default function MenuPage() {
     }
   };
 
-  const handleAddItem = async (newItem: MenuItem) => {
-    setItems([...items, newItem]);
-    setIsDialogOpen(false);
-    toast({
-      title: "Success",
-      description: "Menu item added successfully",
-    });
+  const handleCreateCategory = async () => {
+    if (!categoryName) return;
+
+    try {
+      let imageUrl: string | undefined;
+
+      if (categoryImage) {
+        imageUrl = await uploadToCloudinary(categoryImage);
+      }
+
+      const res = await authenticatedFetch("/api/v1/menu/categories", {
+        method: "POST",
+        body: JSON.stringify({
+          name: categoryName,
+          imageUrl,
+          order: 1,
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+
+      toast({ title: "Category created" });
+      setCategoryName("");
+      setCategoryImage(null);
+      fetchMenuItems();
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to create category",
+        variant: "destructive",
+      });
+    }
   };
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -78,14 +120,28 @@ export default function MenuPage() {
           <h1 className="text-3xl font-bold text-foreground">Menu Categories</h1>
           <p className="text-muted-foreground mt-2">Manage your restaurant's menu</p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>Add category</Button>
       </div>
 
-      <AddMenuItemDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onItemAdded={handleAddItem}
-      />
+      <Card className="p-6 space-y-4">
+        <h2 className="text-xl font-semibold">Create Category</h2>
+
+        <input
+          className="w-full border rounded p-2"
+          placeholder="Category name"
+          value={categoryName}
+          onChange={(e) => setCategoryName(e.target.value)}
+        />
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setCategoryImage(e.target.files?.[0] || null)}
+        />
+
+        <Button type="submit" onClick={handleCreateCategory}>
+          Create Category
+        </Button>
+      </Card>
 
       {loading ? (
         <Item variant="muted" className="justify-center items-center py-10">
