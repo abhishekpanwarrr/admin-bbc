@@ -9,11 +9,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Item } from "@/components/ui/item";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { authenticatedFetch } from "@/lib/auth";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type MenuItem = {
@@ -57,7 +71,9 @@ export default function Page() {
   const [itemImage, setItemImage] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const [itemLoading, setItemLoading] = useState(false);
+  const router = useRouter();
+  const { loading: userLoading, user } = useAuth();
   const { toast } = useToast();
 
   const fetchCategories = async () => {
@@ -82,9 +98,17 @@ export default function Page() {
   }, []);
 
   const handleCreateMenuItem = async () => {
-    if (!itemName || !itemPrice || !itemCategoryId) return;
+    if (!itemName || !itemPrice || !itemCategoryId) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
+      setItemLoading(true);
       let imageUrl: string | undefined;
 
       if (itemImage) {
@@ -120,18 +144,34 @@ export default function Page() {
         description: "Failed to create menu item",
         variant: "destructive",
       });
+      setItemLoading(false);
+    } finally {
+      setItemLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (userLoading) return;
+
+    if (!user?.id || user.role !== "ADMIN") {
+      router.replace("/auth/login");
+    }
+  }, [user, userLoading, router]);
+
+  if (userLoading) {
+    return <div>Checking access…</div>;
+  }
+
+  if (!user || user.role !== "ADMIN") {
+    return null; // prevent flash
+  }
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Menu Items</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your restaurant menu
-          </p>
+          <p className="text-muted-foreground mt-1">Manage your restaurant menu</p>
         </div>
 
         {/* Dialog Trigger */}
@@ -146,49 +186,52 @@ export default function Page() {
             </DialogHeader>
 
             <div className="space-y-3">
-              <input
-                className="w-full border rounded p-2"
+              <Input
                 placeholder="Item name"
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
               />
-
-              <textarea
-                className="w-full border rounded p-2"
+              <Textarea
                 placeholder="Description (optional)"
                 value={itemDescription}
                 onChange={(e) => setItemDescription(e.target.value)}
               />
-
-              <input
+              <Input
                 className="w-full border rounded p-2"
                 type="number"
                 placeholder="Price in paise (15000 = ₹150)"
                 value={itemPrice}
                 onChange={(e) => setItemPrice(e.target.value)}
               />
-
-              <select
-                className="w-full border rounded p-2"
-                value={itemCategoryId}
-                onChange={(e) => setItemCategoryId(e.target.value)}
-              >
-                <option value="">Select category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-
-              <input
+              <Select value={itemCategoryId} onValueChange={(value) => setItemCategoryId(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Categories</SelectLabel>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Label htmlFor="picture">Picture</Label>
+              <Input
+                id="picture"
                 type="file"
                 accept="image/*"
                 onChange={(e) => setItemImage(e.target.files?.[0] || null)}
               />
-
-              <Button className="w-full" onClick={handleCreateMenuItem}>
-                Create Item
+              <Button
+                disabled={itemLoading}
+                className="w-full mt-2"
+                onClick={handleCreateMenuItem}
+                type="submit"
+              >
+                {itemLoading ? <Spinner /> : "Create Item"}
               </Button>
             </div>
           </DialogContent>
@@ -203,9 +246,7 @@ export default function Page() {
           </Item>
         ) : categories.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">
-              No menu items yet. Start by adding one!
-            </p>
+            <p className="text-muted-foreground">No menu items yet. Start by adding one!</p>
           </Card>
         ) : (
           categories.map((category) => (
@@ -214,22 +255,12 @@ export default function Page() {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {category.items?.map((item) => (
-                  <Card
-                    key={item.id}
-                    className="p-3 space-y-2 hover:shadow-md transition"
-                  >
+                  <Card key={item.id} className="p-3 space-y-2 hover:shadow-md transition">
                     <div className="relative w-full h-28 rounded overflow-hidden">
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
+                      <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
                     </div>
 
-                    <div className="text-sm font-semibold truncate">
-                      {item.name}
-                    </div>
+                    <div className="text-sm font-semibold truncate">{item.name}</div>
 
                     <div className="text-xs text-muted-foreground line-clamp-2">
                       {item.description}
@@ -238,9 +269,7 @@ export default function Page() {
                     <div className="text-sm font-bold">₹{item.price / 100}</div>
 
                     {!item.isAvailable && (
-                      <span className="text-xs text-red-500">
-                        Not Available
-                      </span>
+                      <span className="text-xs text-red-500">Not Available</span>
                     )}
                   </Card>
                 ))}

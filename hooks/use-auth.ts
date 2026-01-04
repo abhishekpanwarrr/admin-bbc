@@ -1,35 +1,35 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { getCurrentUser, getToken } from "@/lib/auth"
+import { useEffect, useState } from "react";
+import { getCurrentUser, getToken } from "@/lib/auth";
 
 export function useAuth() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = getToken()
+        const token = getToken();
         if (!token) {
-          setIsAuthenticated(false)
-          setLoading(false)
-          return
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
         }
 
-        const userData = await getCurrentUser()
-        setUser(userData)
-        setIsAuthenticated(true)
+        const userData = await getCurrentUser();
+        setUser(userData);
+        setIsAuthenticated(true);
       } catch (error) {
-        setIsAuthenticated(false)
+        setIsAuthenticated(false);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
-  return { user, loading, isAuthenticated }
+  return { user, loading, isAuthenticated, setUser };
 }

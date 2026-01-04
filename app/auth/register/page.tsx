@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { register } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { setUser, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
@@ -60,7 +62,11 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-
+  if (user?.id) {
+    if (user.role === "ADMIN") {
+      return router.replace("/admin/dashboard");
+    }
+  }
   return (
     <main className="min-h-screen bg-linear-to-br from-background via-background to-secondary/10 flex items-center justify-center px-4">
       <Card className="w-full max-w-md p-8 space-y-6">

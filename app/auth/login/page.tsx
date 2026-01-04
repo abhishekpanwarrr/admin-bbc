@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { login } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  const { setUser, user } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -31,6 +33,7 @@ export default function LoginPage() {
 
     try {
       const response = await login(formData);
+      setUser(response.user);
       toast({
         title: "Success",
         description: `Welcome back, ${response.user.name || response.user.email}!`,
@@ -53,8 +56,14 @@ export default function LoginPage() {
     }
   };
 
+  if (user?.id) {
+    if (user.role === "ADMIN") {
+      return router.replace("/admin/dashboard");
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-linear-to-br from-background via-background to-secondary/10 flex items-center justify-center px-4">
       <Card className="w-full max-w-md p-8 space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-foreground">Login</h1>

@@ -8,19 +8,18 @@ import { authenticatedFetch } from "@/lib/auth";
 import type { Order } from "@/types/order";
 import { Item } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 
-type OrderStatus =
-  | "pending"
-  | "preparing"
-  | "ready"
-  | "completed"
-  | "cancelled";
+type OrderStatus = "pending" | "preparing" | "ready" | "completed" | "cancelled";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const { toast } = useToast();
+  const router = useRouter();
+  const { loading: userLoading, user } = useAuth();
 
   useEffect(() => {
     fetchOrders();
@@ -44,25 +43,17 @@ export default function OrdersPage() {
     }
   };
 
-  const handleStatusUpdate = async (
-    orderId: string,
-    newStatus: OrderStatus
-  ) => {
+  const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      const response = await authenticatedFetch(
-        `/api/v1/admin/orders/${orderId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
+      const response = await authenticatedFetch(`/api/v1/admin/orders/${orderId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      });
 
       if (!response.ok) throw new Error("Failed to update order");
 
       setOrders(
-        orders.map((order) =>
-          order.id === orderId ? { ...order, status: newStatus } : order
-        )
+        orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
       );
 
       toast({
@@ -79,10 +70,23 @@ export default function OrdersPage() {
   };
 
   const filteredOrders =
-    filter === "all"
-      ? orders
-      : orders.filter((order) => order.status === filter);
+    filter === "all" ? orders : orders.filter((order) => order.status === filter);
 
+  useEffect(() => {
+    if (userLoading) return;
+
+    if (!user?.id || user.role !== "ADMIN") {
+      router.replace("/auth/login");
+    }
+  }, [user, userLoading, router]);
+
+  if (userLoading) {
+    return <div>Checking access…</div>;
+  }
+
+  if (!user || user.role !== "ADMIN") {
+    return null; // prevent flash
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -98,9 +102,7 @@ export default function OrdersPage() {
         >
           All Orders
         </Button>
-        {(
-          ["pending", "preparing", "ready", "completed", "cancelled"] as const
-        ).map((status) => (
+        {(["pending", "preparing", "ready", "completed", "cancelled"] as const).map((status) => (
           <Button
             key={status}
             variant={filter === status ? "default" : "outline"}
@@ -126,20 +128,14 @@ export default function OrdersPage() {
             <Card key={order.id} className="p-6 space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Order #{order.id}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Customer: {order.userId}
-                  </p>
+                  <h3 className="text-lg font-semibold text-foreground">Order #{order.id}</h3>
+                  <p className="text-sm text-muted-foreground">Customer: {order.userId}</p>
                   <p className="text-sm text-muted-foreground">
                     Date: {new Date(order.createdAt || "").toLocaleString()}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-primary">
-                    ${order.totalPrice}
-                  </p>
+                  <p className="text-2xl font-bold text-primary">${order.totalPrice}</p>
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-2 ${
                       order.status === "completed"
@@ -162,10 +158,7 @@ export default function OrdersPage() {
                 <h4 className="font-semibold text-foreground mb-2">Items:</h4>
                 <ul className="space-y-2">
                   {order.items?.map((item, idx) => (
-                    <li
-                      key={idx}
-                      className="text-sm text-muted-foreground flex justify-between"
-                    >
+                    <li key={idx} className="text-sm text-muted-foreground flex justify-between">
                       <span>{item.name || item.menuItemId}</span>
                       <span>x{item.quantity}</span>
                     </li>
@@ -179,9 +172,7 @@ export default function OrdersPage() {
                 </label>
                 <select
                   value={order.status}
-                  onChange={(e) =>
-                    handleStatusUpdate(order.id, e.target.value as OrderStatus)
-                  }
+                  onChange={(e) => handleStatusUpdate(order.id, e.target.value as OrderStatus)}
                   className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 >
                   <option value="pending">Pending</option>

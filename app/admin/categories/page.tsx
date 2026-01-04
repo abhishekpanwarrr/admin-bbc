@@ -8,6 +8,8 @@ import { authenticatedFetch } from "@/lib/auth";
 import type { MenuItem } from "@/types/menu";
 import { Spinner } from "@/components/ui/spinner";
 import { Item } from "@/components/ui/item";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 
 async function uploadToCloudinary(file: File) {
   const formData = new FormData();
@@ -26,11 +28,12 @@ async function uploadToCloudinary(file: File) {
 }
 
 export default function MenuPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryName, setCategoryName] = useState("");
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
-
   const { toast } = useToast();
 
   const fetchMenuItems = async () => {
@@ -112,6 +115,22 @@ export default function MenuPage() {
   useEffect(() => {
     fetchMenuItems();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (!user?.id || user.role !== "ADMIN") {
+      router.replace("/auth/login");
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return <div>Checking access…</div>;
+  }
+
+  if (!user || user.role !== "ADMIN") {
+    return null; // prevent flash
+  }
 
   return (
     <div className="space-y-6">
