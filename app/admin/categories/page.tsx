@@ -75,12 +75,8 @@ export default function MenuPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Menu Categories
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your restaurant's menu
-          </p>
+          <h1 className="text-3xl font-bold text-foreground">Menu Categories</h1>
+          <p className="text-muted-foreground mt-2">Manage your restaurant's menu</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>Add category</Button>
       </div>
@@ -97,9 +93,7 @@ export default function MenuPage() {
         </Item>
       ) : items.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-muted-foreground">
-            No menu items yet. Start by adding one!
-          </p>
+          <p className="text-muted-foreground">No menu items yet. Start by adding one!</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -113,21 +107,13 @@ export default function MenuPage() {
                 />
               )}
               <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">
-                  Category- {item.name}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {item.description}
-                </p>
+                <h3 className="font-semibold text-foreground">Category- {item.name}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-primary">
-                    {item.items.length > 0
-                      ? `${item.items.length} ${item.name}`
-                      : "N/A"}
+                    {item.items.length > 0 ? `${item.items.length} ${item.name}` : "N/A"}
                   </span>
-                  <span className="text-sm text-muted-foreground">
-                    {item.category}
-                  </span>
+                  <span className="text-sm text-muted-foreground">{item.category}</span>
                 </div>
               </div>
               <Button
