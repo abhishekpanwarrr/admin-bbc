@@ -60,15 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     if (loading) return;
-
     // ❌ Not logged in → protect private routes
-    if (!isAuthenticated && pathname !== "/login") {
-      router.replace("/login");
+    if (!isAuthenticated && pathname !== "/auth/login") {
+      router.replace("/auth/login");
       return;
     }
 
     // ✅ Logged in → block login page
-    if (isAuthenticated && pathname === "/login") {
+    if (isAuthenticated && pathname === "/auth/login") {
       if (user?.role === "ADMIN") {
         router.replace("/admin/dashboard");
       } else {
